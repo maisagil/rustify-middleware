@@ -17,7 +17,7 @@
 //! Rustify is a small library written in Rust which eases the burden of
 //! scaffolding HTTP APIs. It provides an `Endpoint` trait along with a macro helper
 //! which allows templating various remote endpoints. Both asynchronous and
-//! synchrounous clients are offered for executing requests against endpoints with
+//! synchronous clients are offered for executing requests against endpoints with
 //! the option of implementing custom clients using the `Client` trait.
 //!
 //! Rustify provides support for serializing requests and deserializing responses.
@@ -31,8 +31,8 @@
 //!
 //! ```ignore
 //! [dependencies]
-//! rustify = "0.5.2"
-//! rustify_derive = "0.5.2"
+//! rustify = "0.6.1"
+//! rustify_derive = "0.5.4"
 //! ```
 //!
 //! ## Usage
@@ -165,7 +165,7 @@
 //!
 //! # tokio_test::block_on(async {
 //! let endpoint = Test {
-//!     file: b"contents".to_vec(),   
+//!     file: b"contents".to_vec(),
 //! };
 //! let client = Client::default("http://api.com");
 //! let result = endpoint.exec(&client).await;

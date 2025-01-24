@@ -41,7 +41,7 @@ pub fn build_request(
     query: Option<String>,
     data: Option<Vec<u8>>,
 ) -> Result<Request<Vec<u8>>, ClientError> {
-    info!("Building endpoint request");
+    trace!("Building endpoint request");
     let uri = build_url(base, path, query)?;
 
     let method_err = method.clone();
@@ -49,7 +49,7 @@ pub fn build_request(
     Request::builder()
         .uri(uri)
         .method(method)
-        .body(data.unwrap_or_else(Vec::<u8>::new))
+        .body(data.unwrap_or_default())
         .map_err(|e| ClientError::RequestBuildError {
             source: e,
             method: method_err,

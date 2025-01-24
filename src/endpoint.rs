@@ -87,12 +87,15 @@ impl<E: Endpoint, M: MiddleWare> Endpoint for MutatedEndpoint<'_, E, M> {
         Ok(req)
     }
 
+    // TODO: remove the allow when the upstream clippy issue is fixed:
+    // <https://github.com/rust-lang/rust-clippy/issues/12281>
+    #[allow(clippy::blocks_in_conditions)]
     #[instrument(skip(self, client), err)]
     async fn exec(
         &self,
         client: &impl Client,
     ) -> Result<EndpointResult<Self::Response>, ClientError> {
-        info!("Executing endpoint");
+        trace!("Executing endpoint");
 
         let req = self.request(client.base())?;
         let resp = exec_mut(client, self, req, self.middleware).await?;
@@ -104,7 +107,7 @@ impl<E: Endpoint, M: MiddleWare> Endpoint for MutatedEndpoint<'_, E, M> {
         &self,
         client: &impl BlockingClient,
     ) -> Result<EndpointResult<Self::Response>, ClientError> {
-        info!("Executing endpoint");
+        trace!("Executing endpoint");
 
         let req = self.request(client.base())?;
         let resp = exec_block_mut(client, self, req, self.middleware)?;
@@ -221,12 +224,15 @@ pub trait Endpoint: Send + Sync + Sized {
     }
 
     /// Executes the Endpoint using the given [Client].
+    // TODO: remove the allow when the upstream clippy issue is fixed:
+    // <https://github.com/rust-lang/rust-clippy/issues/12281>
+    #[allow(clippy::blocks_in_conditions)]
     #[instrument(skip(self, client), err)]
     async fn exec(
         &self,
         client: &impl Client,
     ) -> Result<EndpointResult<Self::Response>, ClientError> {
-        info!("Executing endpoint");
+        trace!("Executing endpoint");
 
         let req = self.request(client.base())?;
         let resp = exec(client, req).await?;
@@ -244,7 +250,7 @@ pub trait Endpoint: Send + Sync + Sized {
         &self,
         client: &impl BlockingClient,
     ) -> Result<EndpointResult<Self::Response>, ClientError> {
-        info!("Executing endpoint");
+        trace!("Executing endpoint");
 
         let req = self.request(client.base())?;
         let resp = exec_block(client, req)?;

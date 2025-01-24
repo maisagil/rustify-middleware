@@ -96,11 +96,9 @@ pub(crate) fn attributes(attrs: &[Attribute], name: &str) -> Result<Vec<Meta>, E
     let mut result = Vec::<Meta>::new();
     for attr in attrs.iter() {
         let meta = attr.parse_meta().map_err(Error::from)?;
-        match meta.path().is_ident(name) {
-            true => {
-                result.push(meta);
-            }
-            false => {}
+
+        if meta.path().is_ident(name) {
+            result.push(meta);
         }
     }
 
@@ -136,7 +134,7 @@ pub(crate) fn field_attributes(
             // Combine all meta parameters from each attribute
             let attrs = attrs
                 .iter()
-                .map(|a| attr_list(a))
+                .map(attr_list)
                 .collect::<Result<Vec<Vec<Meta>>, Error>>()?;
 
             // Flatten and eliminate duplicates
