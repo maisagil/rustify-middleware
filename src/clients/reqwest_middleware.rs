@@ -33,6 +33,7 @@ use std::convert::TryFrom;
 /// ```
 ///
 /// [1]: https://docs.rs/reqwest-middleware/latest/reqwest_middleware/struct.ClientWithMiddleware.html
+#[derive(Clone)]
 pub struct ClientWithMiddleware {
     pub http: reqwest_middleware::ClientWithMiddleware,
     pub base: String,
