@@ -1,0 +1,15 @@
+inputs:
+  fenix:
+    url: github:nix-community/fenix
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
+  nixpkgs:
+    url: github:cachix/devenv-nixpkgs/rolling
+  nixpkgs-unstable:
+    url: github:NixOS/nixpkgs/nixos-unstable
+  nixdev:
+    url: github:maisagil/nixdev
+allowUnfree: true
+imports:
+  - nixdev

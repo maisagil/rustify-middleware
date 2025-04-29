@@ -1,4 +1,18 @@
-/target
+# Devenv
+.devenv*
+devenv.local.nix
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml
+
+# rust
+target/
 /rustify_derive/target
 /wip
 Cargo.lock
+
+# Secrets
+unencrypted_*_secrets.yaml
