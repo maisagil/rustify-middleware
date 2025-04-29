@@ -1,6 +1,6 @@
 //! Contains the [Endpoint] trait and supporting traits/functions.
 
-use std::marker::PhantomData;
+use std::{collections::HashMap, marker::PhantomData};
 
 #[cfg(feature = "blocking")]
 use crate::blocking::client::Client as BlockingClient;
@@ -60,6 +60,10 @@ impl<E: Endpoint, M: MiddleWare> Endpoint for MutatedEndpoint<'_, E, M> {
         self.endpoint.method()
     }
 
+    fn headers(&self) -> Result<HashMap<String, String>, ClientError> {
+        self.endpoint.headers()
+    }
+
     fn query(&self) -> Result<Option<String>, ClientError> {
         self.endpoint.query()
     }
@@ -81,6 +85,8 @@ impl<E: Endpoint, M: MiddleWare> Endpoint for MutatedEndpoint<'_, E, M> {
             self.method(),
             self.query()?,
             self.body()?,
+            Self::REQUEST_BODY_TYPE,
+            self.headers()?,
         )?;
 
         self.middleware.request(self, &mut req)?;
@@ -194,6 +200,10 @@ pub trait Endpoint: Send + Sync + Sized {
     /// The HTTP method to be used when executing this Endpoint.
     fn method(&self) -> RequestMethod;
 
+    fn headers(&self) -> Result<HashMap<String, String>, ClientError> {
+        Ok(HashMap::new())
+    }
+
     /// Optional query parameters to add to the request.
     fn query(&self) -> Result<Option<String>, ClientError> {
         Ok(None)
@@ -220,6 +230,8 @@ pub trait Endpoint: Send + Sync + Sized {
             self.method(),
             self.query()?,
             self.body()?,
+            Self::REQUEST_BODY_TYPE,
+            self.headers()?,
         )
     }
 

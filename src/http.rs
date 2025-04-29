@@ -1,10 +1,12 @@
 //! Contains helper functions for working with HTTP requests and responses.
 
+use std::collections::HashMap;
+
 use crate::{
     enums::{RequestMethod, RequestType},
     errors::ClientError,
 };
-use http::{Request, Uri};
+use http::{HeaderValue, Request, Uri};
 use serde::Serialize;
 use url::Url;
 
@@ -40,15 +42,26 @@ pub fn build_request(
     method: RequestMethod,
     query: Option<String>,
     data: Option<Vec<u8>>,
+    request_type: RequestType,
+    headers: HashMap<String, String>,
 ) -> Result<Request<Vec<u8>>, ClientError> {
     trace!("Building endpoint request");
     let uri = build_url(base, path, query)?;
 
     let method_err = method.clone();
     let uri_err = uri.to_string();
-    Request::builder()
-        .uri(uri)
-        .method(method)
+    let mut request = Request::builder().uri(uri).method(method);
+    for (header, value) in headers {
+        let header_value = HeaderValue::from_str(&value)
+            .map_err(|e| ClientError::EndpointBuildError { source: e.into() })?;
+        request = request.header(header, header_value);
+    }
+    match request_type {
+        RequestType::JSON => {
+            request = request.header("Content-Type", "application/json");
+        }
+    }
+    request
         .body(data.unwrap_or_default())
         .map_err(|e| ClientError::RequestBuildError {
             source: e,
