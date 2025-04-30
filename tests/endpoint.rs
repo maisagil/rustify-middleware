@@ -126,6 +126,47 @@ async fn test_data() {
 }
 
 #[test(tokio::test)]
+async fn test_headers() {
+    struct Test {
+        name: String,
+    }
+
+    impl Endpoint for Test {
+        type Response = TestResponse;
+        const REQUEST_BODY_TYPE: rustify::enums::RequestType = rustify::enums::RequestType::JSON;
+        const RESPONSE_BODY_TYPE: rustify::enums::ResponseType = rustify::enums::ResponseType::JSON;
+        fn headers(
+            &self,
+        ) -> Result<std::collections::HashMap<String, String>, rustify::errors::ClientError>
+        {
+            let mut headers = std::collections::HashMap::new();
+            // inserting api key into request.
+            headers.insert("name".to_string(), self.name.to_string());
+            Ok(headers)
+        }
+        fn path(&self) -> String {
+            "/test/path".to_string()
+        }
+        fn method(&self) -> rustify::enums::RequestMethod {
+            rustify::enums::RequestMethod::POST
+        }
+    }
+
+    let t = TestServer::default();
+    let e = Test {
+        name: "test".to_string(),
+    };
+    let m = t.server.mock(|when, then| {
+        when.method(POST).path("/test/path").header("name", "test");
+        then.status(200);
+    });
+    let r = e.exec(&t.client).await;
+
+    m.assert();
+    assert!(r.is_ok());
+}
+
+#[test(tokio::test)]
 async fn test_raw_data() {
     #[derive(Endpoint)]
     #[endpoint(path = "test/path/{self.name}", method = "POST")]
