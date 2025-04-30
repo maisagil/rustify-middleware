@@ -34,6 +34,13 @@ pub fn build_query(object: &impl Serialize) -> Result<String, ClientError> {
         .map_err(|e| ClientError::UrlQueryParseError { source: e.into() })
 }
 
+#[instrument(skip(object), err)]
+pub fn build_headers(object: &impl Serialize) -> Result<HashMap<String, String>, ClientError> {
+    let json = serde_json::to_string(object)
+        .map_err(|e| ClientError::DataParseError { source: e.into() })?;
+    serde_json::from_str(&json).map_err(|e| ClientError::DataParseError { source: e.into() })
+}
+
 /// Builds a [Request] using the given [Endpoint][crate::Endpoint] and base URL.
 #[instrument(skip(query, data), err)]
 pub fn build_request(

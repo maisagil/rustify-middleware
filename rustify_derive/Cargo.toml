@@ -1,6 +1,6 @@
 [package]
 name = "rustify_derive"
-version = "0.5.4"
+version = "0.5.5"
 authors = ["Joshua Gilman <joshuagilman@gmail.com>"]
 description = "A derive macro for implementing an Endpoint for rustify"
 license = "MIT"
@@ -13,7 +13,7 @@ proc-macro = true
 [dependencies]
 syn = "1.0"
 quote = "1.0"
-synstructure = "0.12.5"
+synstructure = "0.12"
 proc-macro2 = "1.0.28"
 regex = "1.5.4"
 serde_urlencoded = "0.7.0"

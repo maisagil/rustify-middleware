@@ -29,6 +29,7 @@ pub(crate) enum EndpointAttribute {
     Body,
     Query,
     Raw,
+    Header,
     Skip,
     Untagged,
 }
@@ -42,6 +43,7 @@ impl TryFrom<&Meta> for EndpointAttribute {
                 "query" => Ok(EndpointAttribute::Query),
                 "raw" => Ok(EndpointAttribute::Raw),
                 "skip" => Ok(EndpointAttribute::Skip),
+                "header" => Ok(EndpointAttribute::Header),
                 _ => Err(Error::new(
                     m.span(),
                     format!("Unknown attribute: {}", i).as_str(),
@@ -117,7 +119,7 @@ fn gen_query(
         // Construct query function
         let temp = parse::fields_to_struct(v, serde_attrs);
         quote! {
-            fn query(&self) -> Result<Option<String>, ClientError> {
+            fn query(&self) -> Result<Option<String>, __ClientError> {
                 #temp
 
                 Ok(Some(build_query(&__temp)?))
@@ -156,7 +158,7 @@ fn gen_body(
 
         let id = v[0].ident.clone().unwrap();
         Ok(quote! {
-            fn body(&self) -> Result<Option<Vec<u8>>, ClientError>{
+            fn body(&self) -> Result<Option<Vec<u8>>, __ClientError>{
                 Ok(Some(self.#id.clone()))
             }
         })
@@ -164,7 +166,7 @@ fn gen_body(
     } else if let Some(v) = fields.get(&EndpointAttribute::Body) {
         let temp = parse::fields_to_struct(v, serde_attrs);
         Ok(quote! {
-            fn body(&self) -> Result<Option<Vec<u8>>, ClientError> {
+            fn body(&self) -> Result<Option<Vec<u8>>, __ClientError> {
                 #temp
 
                 Ok(Some(build_body(&__temp, Self::REQUEST_BODY_TYPE)?))
@@ -174,7 +176,7 @@ fn gen_body(
     } else if let Some(v) = fields.get(&EndpointAttribute::Untagged) {
         let temp = parse::fields_to_struct(v, serde_attrs);
         Ok(quote! {
-            fn body(&self) -> Result<Option<Vec<u8>>, ClientError> {
+            fn body(&self) -> Result<Option<Vec<u8>>, __ClientError> {
                 #temp
 
                 Ok(Some(build_body(&__temp, Self::REQUEST_BODY_TYPE)?))
@@ -183,6 +185,23 @@ fn gen_body(
     // Leave it undefined if no body fields found
     } else {
         Ok(quote! {})
+    }
+}
+
+fn gen_header(fields: &HashMap<EndpointAttribute, Vec<Field>>) -> proc_macro2::TokenStream {
+    let header_fields = fields.get(&EndpointAttribute::Header);
+    if let Some(v) = header_fields {
+        // Construct query function
+        let temp = parse::fields_to_struct(v, &[]);
+        quote! {
+            fn headers(&self) -> Result<std::collections::HashMap<String, String>, __ClientError> {
+                #temp
+
+                Ok(build_headers(&__temp)?)
+            }
+        }
+    } else {
+        quote! {}
     }
 }
 
@@ -288,6 +307,8 @@ fn endpoint_derive(s: synstructure::Structure) -> proc_macro2::TokenStream {
         Err(e) => return e.into_tokens(),
     };
 
+    let header = gen_header(&field_attrs);
+
     // Generate helper functions when deriving Builder
     let builder = match params.builder {
         true => gen_builder(&s.ast().ident, &s.ast().generics),
@@ -301,36 +322,34 @@ fn endpoint_derive(s: synstructure::Structure) -> proc_macro2::TokenStream {
     let const_name = format!("_DERIVE_Endpoint_FOR_{}", id);
     let const_ident = Ident::new(const_name.as_str(), Span::call_site());
     quote! {
-        #[allow(non_local_definitions)]
-        const #const_ident: () = {
-            use rustify::__private::serde::Serialize;
-            use rustify::http::{build_body, build_query};
-            use rustify::client::Client;
-            use rustify::endpoint::Endpoint;
-            use rustify::enums::{RequestMethod, RequestType, ResponseType};
-            use rustify::errors::ClientError;
+        #[allow(unused_imports)]
+            use rustify::__private::serde::Serialize as ____Serialize;
+        #[allow(unused_imports)]
+            use rustify::http::{build_body, build_query, build_headers};
+        #[allow(unused_imports)]
+            use rustify::errors::ClientError as __ClientError;
+        // First implement the trait directly
+        impl #impl_generics rustify::endpoint::Endpoint for #id #ty_generics #where_clause {
+            type Response = #response;
+            const REQUEST_BODY_TYPE: rustify::enums::RequestType = rustify::enums::RequestType::#request_type;
+            const RESPONSE_BODY_TYPE: rustify::enums::ResponseType = rustify::enums::ResponseType::#response_type;
 
-            impl #impl_generics Endpoint for #id #ty_generics #where_clause {
-                type Response = #response;
-                const REQUEST_BODY_TYPE: RequestType = RequestType::#request_type;
-                const RESPONSE_BODY_TYPE: ResponseType = ResponseType::#response_type;
-
-                fn path(&self) -> String {
-                    #path
-                }
-
-                fn method(&self) -> RequestMethod {
-                    RequestMethod::#method
-                }
-
-                #query
-
-
-                #body
+            fn path(&self) -> String {
+                #path
             }
 
-            #builder
-        };
+            fn method(&self) -> rustify::enums::RequestMethod {
+                rustify::enums::RequestMethod::#method
+            }
+
+            #query
+
+            #body
+
+            #header
+        }
+
+        #builder
     }
 }
 

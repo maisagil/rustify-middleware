@@ -167,6 +167,29 @@ async fn test_headers() {
 }
 
 #[test(tokio::test)]
+async fn test_headers_with_macro() {
+    #[derive(Endpoint)]
+    #[endpoint(path = "test/path", method = "POST")]
+    struct Test {
+        #[endpoint(header)]
+        name: String,
+    }
+
+    let t = TestServer::default();
+    let e = Test {
+        name: "test".to_string(),
+    };
+    let m = t.server.mock(|when, then| {
+        when.method(POST).path("/test/path").header("name", "test");
+        then.status(200);
+    });
+    let r = e.exec(&t.client).await;
+
+    m.assert();
+    assert!(r.is_ok());
+}
+
+#[test(tokio::test)]
 async fn test_raw_data() {
     #[derive(Endpoint)]
     #[endpoint(path = "test/path/{self.name}", method = "POST")]
