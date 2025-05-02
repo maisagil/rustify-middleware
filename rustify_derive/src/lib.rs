@@ -197,7 +197,7 @@ fn gen_header(fields: &HashMap<EndpointAttribute, Vec<Field>>) -> proc_macro2::T
             fn headers(&self) -> Result<std::collections::HashMap<String, String>, __ClientError> {
                 #temp
 
-                Ok(build_headers(&__temp)?)
+                build_headers(&__temp)
             }
         }
     } else {
