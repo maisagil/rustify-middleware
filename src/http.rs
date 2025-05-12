@@ -82,7 +82,9 @@ pub fn build_request(
 #[instrument(skip(query), err)]
 pub fn build_url(base: &str, path: &str, query: Option<String>) -> Result<Uri, ClientError> {
     let mut url = Url::parse(base).map_err(|e| ClientError::UrlParseError { source: e })?;
-    url.path_segments_mut().unwrap().extend(path.split('/'));
+    url.path_segments_mut()
+        .unwrap()
+        .extend(path.split('/').skip_while(|s| s.is_empty()));
     if let Some(q) = query {
         url.set_query(Some(q.as_str()));
     }
